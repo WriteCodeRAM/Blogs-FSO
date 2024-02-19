@@ -5,13 +5,18 @@ const app = require('../app');
 const api = supertest(app);
 const helper = require('./blog_helper');
 const Blog = require('../models/blogs');
+const User = require('../models/users');
 
 beforeEach(async () => {
   await Blog.deleteMany({});
+  await User.deleteMany({});
 
+  const userObjects = helper.initialUsers.map((user) => new User(user));
   const blogObjects = helper.initialBlogs.map((blog) => new Blog(blog));
   const promiseArray = blogObjects.map((blog) => blog.save());
+  const promiseArray2 = userObjects.map((user) => user.save());
   await Promise.all(promiseArray);
+  await Promise.all(promiseArray2);
 }, 10000);
 
 describe('when there are some blogs in the db', () => {
@@ -104,133 +109,31 @@ describe('deleting and updating blogs', () => {
   }, 10000);
 });
 
-// test('dummy returns one', () => {
-//   const blogs = [];
+describe('creating users', () => {
+  test('creating user returns 201 if username is unique', async () => {
+    const dummy = {
+      username: 'RAM',
+      name: 'Randal',
+      password: 'password',
+    };
 
-//   const result = listHelper.dummy(blogs);
-//   expect(result).toBe(1);
-// });
+    await api
+      .post('/api/users')
+      .send(dummy)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+  });
 
-// describe('total amount of likes on a blogs passed', () => {
-//   test('no blogs return 0', () => {
-//     const blog = [];
+  test('users must meet minLength requirements; have required fields', async () => {
+    const dummy = {
+      username: 'RA',
+      name: 'Randal',
+      password: 'PASSWORDDD',
+    };
 
-//     const result = listHelper.calculateLikes(blog);
-//     expect(result).toBe(0);
-//   });
-
-//   test('multiple blogs are calculated correctly', () => {
-//     const blog = [
-//       {
-//         _id: '5a422aa71b54a676234d17f8',
-//         title: 'Go To Statement Considered Harmful',
-//         author: 'Edsger W. Dijkstra',
-//         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-//         likes: 5,
-//         __v: 0,
-//       },
-//       {
-//         _id: '5a422a851b54a676234d17f7',
-//         title: 'Canonical string reduction',
-//         author: 'Edsger W. Dijkstra',
-//         url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
-//         likes: 12,
-//         __v: 0,
-//       },
-//       {
-//         _id: '5a422b3a1b54a676234d17f9',
-//         title: 'First class tests',
-//         author: 'Robert C. Martin',
-//         url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-//         likes: 10,
-//         __v: 0,
-//       },
-//       {
-//         _id: '5a422b891b54a676234d17fa',
-//         title: 'TDD harms architecture',
-//         author: 'Robert C. Martin',
-//         url: 'http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html',
-//         likes: 0,
-//         __v: 0,
-//       },
-//     ];
-//     const result = listHelper.calculateLikes(blog);
-//     expect(result).toBe(27);
-//   });
-
-//   test('one blog returns the likes of said blog', () => {
-//     const listWithOneBlog = [
-//       {
-//         _id: '5a422aa71b54a676234d17f8',
-//         title: 'Go To Statement Considered Harmful',
-//         author: 'Edsger W. Dijkstra',
-//         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-//         likes: 5,
-//         __v: 0,
-//       },
-//     ];
-
-//     const result = listHelper.calculateLikes(listWithOneBlog);
-//     expect(result).toBe(5);
-//   });
-// });
-
-// describe('find the blog with most likes', () => {
-//   test('multiple blogs passed', () => {
-//     const blogs = [
-//       {
-//         _id: '5a422a851b54a676234d17f7',
-//         title: 'Canonical string reduction',
-//         author: 'Edsger W. Dijkstra',
-//         url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
-//         likes: 12,
-//         __v: 0,
-//       },
-//       {
-//         _id: '5a422b3a1b54a676234d17f9',
-//         title: 'First class tests',
-//         author: 'Robert C. Martin',
-//         url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-//         likes: 10,
-//         __v: 0,
-//       },
-//       {
-//         _id: '5a422b3a1b54a676234d17f9',
-//         title: 'First class tests',
-//         author: 'Robert C. Martin',
-//         url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-//         likes: 10,
-//         __v: 0,
-//       },
-//     ];
-
-//     const result = listHelper.favoriteBlog(blogs);
-//     expect(result).toEqual(blogs[0]);
-//   });
-
-//   test('no blogs passed', () => {
-//     const blogs = [
-//       {
-//         _id: '5a422b3a1b54a676234d17f9',
-//         title: 'First class tests',
-//         author: 'Robert C. Martin',
-//         url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-//         likes: 10,
-//         __v: 0,
-//       },
-//     ];
-
-//     const result = listHelper.favoriteBlog(blogs);
-//     expect(result).toEqual(blogs[0]);
-//   });
-
-//   test('one blog passed', () => {
-//     const blogs = [];
-
-//     const result = listHelper.favoriteBlog(blogs);
-//     expect(result).toEqual(0);
-//   });
-// });
+    await api.post('/api/users').send(dummy).expect(400);
+  });
+});
 
 afterAll(async () => {
   await mongoose.connection.close();
